@@ -33,17 +33,18 @@ data.categories['sweeps'] = args.sweeps
 data.categories['commit'] = os.popen('git log --pretty="%H" -1').read().strip()
 data.categories['diff'] = os.popen('git diff').read()
     
-L = 1.0
-N = 50
-dL = L / N
 viscosity = 1
-U = 1.
+density = 100.
+gravity = [0., -0.001]
 pressureRelaxation = 0.8
 velocityRelaxation = 0.5
 
+Lx = 30.
+Ly = 6.
+dx = .1
+dy = .1
 
-
-mesh = fp.Grid2D(nx=N, ny=N, dx=dL, dy=dL)
+mesh = fp.Grid2D(Lx=Lx, Ly=Ly, dx=dx, dy=dy)
 volumes = fp.CellVariable(mesh=mesh, value=mesh.cellVolumes)
 
 pressure = fp.CellVariable(mesh=mesh, name="$p$")
@@ -53,8 +54,8 @@ yVelocity = fp.CellVariable(mesh=mesh, name="$u_y$")
 
 velocity = fp.FaceVariable(mesh=mesh, name=r"$\vec{u}$", rank=1)
 
-xVelocityEq = fp.DiffusionTerm(coeff=viscosity) - pressure.grad.dot([1.,0.])
-yVelocityEq = fp.DiffusionTerm(coeff=viscosity) - pressure.grad.dot([0.,1.])
+xVelocityEq = fp.DiffusionTerm(coeff=viscosity) - pressure.grad.dot([1.,0.]) # - density * gravity[0]
+yVelocityEq = fp.DiffusionTerm(coeff=viscosity) - pressure.grad.dot([0.,1.]) # - density * gravity[1]
 
 ap = fp.CellVariable(mesh=mesh, value=1.)
 coeff = 1./ ap.arithmeticFaceValue*mesh._faceAreas * mesh._cellDistances
@@ -65,11 +66,15 @@ contrvolume = volumes.arithmeticFaceValue
 x, y = mesh.cellCenters
 X, Y = mesh.faceCenters
 
-xVelocity.constrain(0., mesh.facesRight | mesh.facesLeft | mesh.facesBottom)
-xVelocity.constrain(U, mesh.facesTop)
+def inlet(yy):
+    return -0.001 * (Y - 3)**2 + 0.009
+    
+xVelocity.constrain(inlet(Y), mesh.facesLeft)
+xVelocity.constrain(0., mesh.facesTop | mesh.facesBottom)
+xVelocity.faceGrad.constrain([[0.], [0.]], mesh.facesRight)
 yVelocity.constrain(0., mesh.exteriorFaces)
-X, Y = mesh.faceCenters
-pressureCorrection.constrain(0., mesh.facesLeft & (Y < dL))
+
+pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
 
 start = time.clock()
 
@@ -100,7 +105,9 @@ for sweep in range(args.sweeps):
          + contrvolume / ap.arithmeticFaceValue * \
            (presgrad[1].arithmeticFaceValue-facepresgrad[1])
     velocity[..., mesh.exteriorFaces.value] = 0.
-    velocity[0, mesh.facesTop.value] = U
+    velocity[0, mesh.facesLeft.value] = inlet(Y)[mesh.facesLeft.value]
+    velocity[0, mesh.facesRight.value] = xVelocity.faceValue[mesh.facesRight.value]
+#    velocity[1, mesh.facesRight.value] = yVelocity.faceValue[mesh.facesRight.value]
 
     ## solve the pressure correction equation
     pressureCorrectionEq.cacheRHSvector()
@@ -109,7 +116,7 @@ for sweep in range(args.sweeps):
     rhs = pressureCorrectionEq.RHSvector
 
     ## update the pressure using the corrected value
-    pressure.setValue(pressure + pressureRelaxation * pressureCorrection )
+    pressure.setValue(pressure + pressureRelaxation * pressureCorrection)
     ## update the velocity using the corrected pressure
     xVelocity.setValue(xVelocity - pressureCorrection.grad[0] / \
                                                ap * mesh.cellVolumes)
