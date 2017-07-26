@@ -67,14 +67,22 @@ x, y = mesh.cellCenters
 X, Y = mesh.faceCenters
 
 def inlet(yy):
-    return -0.001 * (Y - 3)**2 + 0.009
+    return -0.001 * (yy - 3)**2 + 0.009
     
 xVelocity.constrain(inlet(Y), mesh.facesLeft)
 xVelocity.constrain(0., mesh.facesTop | mesh.facesBottom)
-xVelocity.faceGrad.constrain([[0.], [0.]], mesh.facesRight)
+
+#upwinding
+dfP = mesh._cellDistances[mesh.facesRight.value][0]
+cellsNearRight = (mesh.facesRight * mesh.faceNormals).divergence
+xVelocity.constrain(xVelocity[(cellsNearRight != 0).value].value 
+                    + (xVelocity.faceGrad.dot(mesh.faceNormals) * dfP)[mesh.facesRight.value].value, 
+                    where=mesh.facesRight)
+              
 yVelocity.constrain(0., mesh.exteriorFaces)
 
 pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
+# pressureCorrection.constrain(0., mesh.facesRight)
 
 start = time.clock()
 
