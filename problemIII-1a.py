@@ -75,9 +75,9 @@ xVelocity.constrain(0., mesh.facesTop | mesh.facesBottom)
 #upwinding
 dfP = mesh._cellDistances[mesh.facesRight.value][0]
 cellsNearRight = (mesh.facesRight * mesh.faceNormals).divergence
-xVelocity.constrain(xVelocity[(cellsNearRight != 0).value].value 
-                    + (xVelocity.faceGrad.dot(mesh.faceNormals) * dfP)[mesh.facesRight.value].value, 
-                    where=mesh.facesRight)
+pressure.constrain(pressure[(cellsNearRight != 0).value].value 
+                   + (pressure.faceGrad.dot(mesh.faceNormals) * dfP)[mesh.facesRight.value].value, 
+                   where=mesh.facesRight)
               
 yVelocity.constrain(0., mesh.exteriorFaces)
 
