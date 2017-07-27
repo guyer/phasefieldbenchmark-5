@@ -41,8 +41,8 @@ velocityRelaxation = 0.5
 
 Lx = 30.
 Ly = 6.
-dx = .1
-dy = .1
+dx = .2
+dy = .2
 
 mesh = fp.Grid2D(Lx=Lx, Ly=Ly, dx=dx, dy=dy)
 volumes = fp.CellVariable(mesh=mesh, value=mesh.cellVolumes)
@@ -60,7 +60,7 @@ yVelocityEq = fp.DiffusionTerm(coeff=viscosity) - pressure.grad.dot([0.,1.]) # -
 ap = fp.CellVariable(mesh=mesh, value=1.)
 coeff = 1./ ap.arithmeticFaceValue*mesh._faceAreas * mesh._cellDistances
 cellsAtOutlet = ((mesh.facesRight * mesh.faceNormals).divergence != 0)
-pressureCorrectionEq = fp.DiffusionTerm(coeff=coeff) - velocity.divergence * (~cellsAtOutlet.value)
+pressureCorrectionEq = fp.DiffusionTerm(coeff=coeff) - velocity.divergence # * (~cellsAtOutlet.value)
 
 contrvolume = volumes.arithmeticFaceValue
 
