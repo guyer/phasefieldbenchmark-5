@@ -44,7 +44,7 @@ velocityRelaxation = 0.5
 Lx = 30.
 Ly = 6.
 dx = .2
-dy = .2
+dy = .05
 
 def fn(f, N):
     '''Root solving kernel for compression factor
@@ -53,13 +53,18 @@ def fn(f, N):
     '''
     return (1 - f**N) / (1 - f) - 2.
     
-N = 10
+N = 2
 compression = fsolve(fn, x0=[.5], args=(N))[0]
 
 Nx = int(Lx / dx)
+Ny = int(Ly / dy)
 dx_variable = [dx] * (Nx - 2) + [dx * compression**i for i in range(N+1)]
 
-mesh = fp.Grid2D(dx=dx_variable, Ly=Ly, dy=dy)
+dx_variable = [dx] * Nx # - 2) + [dx * compression**i for i in range(N+1)]
+
+dy_variable = [dy] * Ny
+
+mesh = fp.Grid2D(dx=dx_variable, dy=dy_variable)
 volumes = fp.CellVariable(mesh=mesh, value=mesh.cellVolumes)
 
 pressure = fp.CellVariable(mesh=mesh, name="$p$")
