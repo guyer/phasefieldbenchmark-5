@@ -127,7 +127,7 @@ for sweep in range(args.sweeps):
     yVelocity.setValue(yVelocity - pressureCorrection.grad[1] / \
                                                ap * mesh.cellVolumes)
 
-    if sweeps % args.check == 0:
+    if sweep % args.check == 0:
         fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
                             filename=data["sweep={}.tar.gz".format(sweep)].make().abspath)
                         
