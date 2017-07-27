@@ -17,6 +17,8 @@ parser.add_argument("--output", help="directory to store results in",
                     default=str(uuid.uuid4()))
 parser.add_argument("--sweeps", help="number of nonlinear sweeps to take",
                     type=int, default=10)
+parser.add_argument("--check", help="period of sweeps to checkpoint data",
+                    type=int, default=1)
 args, unknowns = parser.parse_known_args()
                     
 if parallelComm.procID == 0:
@@ -125,8 +127,9 @@ for sweep in range(args.sweeps):
     yVelocity.setValue(yVelocity - pressureCorrection.grad[1] / \
                                                ap * mesh.cellVolumes)
 
-    fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
-                        filename=data["sweep={}.tar.gz".format(sweep)].make().abspath)
+    if sweeps % args.check == 0:
+        fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
+                            filename=data["sweep={}.tar.gz".format(sweep)].make().abspath)
                         
     print 'sweep:',sweep,', x residual:',xres, \
                          ', y residual',yres, \
