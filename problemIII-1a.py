@@ -57,7 +57,7 @@ N = 10
 compression = fsolve(fn, x0=[.5], args=(N))[0]
 
 Nx = int(Lx / dx)
-dx_variable = [dx] * (Nx - 1) + dx * compression**fp.numerix.arange(N+1)
+dx_variable = [dx] * (Nx - 2) + [dx * compression**i for i in range(N+1)]
 
 mesh = fp.Grid2D(dx=dx_variable, Ly=Ly, dy=dy)
 volumes = fp.CellVariable(mesh=mesh, value=mesh.cellVolumes)
