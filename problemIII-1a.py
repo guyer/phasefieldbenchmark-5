@@ -59,7 +59,8 @@ yVelocityEq = fp.DiffusionTerm(coeff=viscosity) - pressure.grad.dot([0.,1.]) # -
 
 ap = fp.CellVariable(mesh=mesh, value=1.)
 coeff = 1./ ap.arithmeticFaceValue*mesh._faceAreas * mesh._cellDistances
-pressureCorrectionEq = fp.DiffusionTerm(coeff=coeff) - velocity.divergence
+cellsAtOutlet = ((mesh.facesRight * mesh.faceNormals).divergence != 0)
+pressureCorrectionEq = fp.DiffusionTerm(coeff=coeff) - velocity.divergence * (!cellsNearRight.value
 
 contrvolume = volumes.arithmeticFaceValue
 
@@ -72,13 +73,6 @@ def inlet(yy):
 xVelocity.constrain(inlet(Y), mesh.facesLeft)
 xVelocity.constrain(0., mesh.facesTop | mesh.facesBottom)
 
-#upwinding
-dfP = mesh._cellDistances[mesh.facesRight.value][0]
-cellsNearRight = (mesh.facesRight * mesh.faceNormals).divergence
-pressure.constrain(pressure[(cellsNearRight != 0).value].value 
-                   + (pressure.faceGrad.dot(mesh.faceNormals) * dfP)[mesh.facesRight.value].value, 
-                   where=mesh.facesRight)
-              
 yVelocity.constrain(0., mesh.exteriorFaces)
 
 pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
