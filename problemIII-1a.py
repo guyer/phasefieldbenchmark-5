@@ -4,7 +4,7 @@ import argparse
 import time
 import uuid 
 
-import numpy as np
+from scipy.optimize import fsolve
 
 import datreant.core as dtr
 
@@ -46,7 +46,20 @@ Ly = 6.
 dx = .2
 dy = .2
 
-mesh = fp.Grid2D(Lx=Lx, Ly=Ly, dx=dx, dy=dy)
+def fn(f, N):
+    '''Root solving kernel for compression factor
+    
+    Determine f(N), such that $\Delta x \sum_{i=0}^N f^i = 2 \Delta x$
+    '''
+    return (1 - f**N) / (1 - f) - 2.
+    
+N = 10
+compression = fsolve(fn, x0=[.5], args=(N))[0]
+
+Nx = int(Lx / dx)
+dx_variable = [dx] * (Nx - 1) + dx * compression**fp.numerix.arange(N+1)
+
+mesh = fp.Grid2D(dx=dx_variable, Ly=Ly, dy=dy)
 volumes = fp.CellVariable(mesh=mesh, value=mesh.cellVolumes)
 
 pressure = fp.CellVariable(mesh=mesh, name="$p$")
