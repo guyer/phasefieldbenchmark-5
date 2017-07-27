@@ -43,8 +43,8 @@ velocityRelaxation = 0.5
 
 Lx = 30.
 Ly = 6.
-dx = .2
-dy = .2
+dx = .1
+dy = .1
 
 def fn(f, N):
     '''Root solving kernel for compression factor
