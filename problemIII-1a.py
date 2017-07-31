@@ -19,6 +19,12 @@ parser.add_argument("--sweeps", help="number of nonlinear sweeps to take",
                     type=int, default=10)
 parser.add_argument("--check", help="period of sweeps to checkpoint data",
                     type=int, default=1)
+parser.add_argument("--dx", help="cell spacing in x direction",
+                    type=float, default=0.2)
+parser.add_argument("--dy", help="cell spacing in y direction",
+                    type=float, default=0.2)
+parser.add_argument("--compression", help="number of compressed cells within outlet 'cell'",
+                    type=int, default=1)
 args, unknowns = parser.parse_known_args()
                     
 if parallelComm.procID == 0:
@@ -43,8 +49,8 @@ velocityRelaxation = 0.5
 
 Lx = 30.
 Ly = 6.
-dx = .1
-dy = .1
+dx = args.dx
+dy = args.dy
 
 def fn(f, N):
     '''Root solving kernel for compression factor
@@ -53,7 +59,7 @@ def fn(f, N):
     '''
     return (1 - f**N) / (1 - f) - 2.
     
-N = 10
+N = 1 + args.compression
 compression = fsolve(fn, x0=[.5], args=(N))[0]
 
 Nx = int(Lx / dx)
