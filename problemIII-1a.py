@@ -157,6 +157,6 @@ for sweep in range(args.sweeps):
                             filename=data["sweep={}.tar.gz".format(sweep)].make().abspath)
                    
     with open(data['residuals.npy'].make().abspath, 'a') as f:
-        f.write("{}\t{}\t{}\t{}\t{}".format(sweep, xres, yres, pres, max(abs(rhs)))
+        f.write("{}\t{}\t{}\t{}\t{}".format(sweep, xres, yres, pres, max(abs(rhs))))
                             
 data.categories['elapsed'] = time.clock() - start
