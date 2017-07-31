@@ -102,6 +102,9 @@ yVelocity.constrain(0., mesh.exteriorFaces)
 # pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
 pressureCorrection.constrain(0., mesh.facesRight)
 
+with open(data['residuals.npy'].make().abspath, 'a') as f:
+    f.write("{}\t{}\t{}\t{}\t{}".format("sweep", "x_residual", "y_residual", "p_residual", "continuity"))
+
 start = time.clock()
 
 for sweep in range(args.sweeps):
@@ -152,11 +155,8 @@ for sweep in range(args.sweeps):
     if sweep % args.check == 0:
         fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
                             filename=data["sweep={}.tar.gz".format(sweep)].make().abspath)
-                        
-    print 'sweep:',sweep,', x residual:',xres, \
-                         ', y residual',yres, \
-                         ', p residual:',pres, \
-                         ', continuity:',max(abs(rhs))
-
+                   
+    with open(data['residuals.npy'].make().abspath, 'a') as f:
+        f.write("{}\t{}\t{}\t{}\t{}".format(sweep, xres, yres, pres, max(abs(rhs)))
                             
 data.categories['elapsed'] = time.clock() - start
