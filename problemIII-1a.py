@@ -79,7 +79,7 @@ yVelocity = fp.CellVariable(mesh=mesh, name="$u_y$")
 velocity = fp.FaceVariable(mesh=mesh, name=r"$\vec{u}$", rank=1)
 
 xVelocityEq = fp.DiffusionTerm(coeff=viscosity) - pressure.grad.dot([1.,0.]) - density * gravity[0]
-yVelocityEq = fp.DiffusionTerm(coeff=viscosity) - pressure.grad.dot([0.,1.]) - density * gravity[1]
+yVelocityEq = fp.DiffusionTerm(coeff=viscosity) - pressure.grad.dot([0.,1.])# - density * gravity[1]
 
 ap = fp.CellVariable(mesh=mesh, value=1.)
 coeff = 1./ ap.arithmeticFaceValue*mesh._faceAreas * mesh._cellDistances
@@ -99,8 +99,8 @@ xVelocity.constrain(0., mesh.facesTop | mesh.facesBottom)
 
 yVelocity.constrain(0., mesh.exteriorFaces)
 
-pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
-# pressureCorrection.constrain(0., mesh.facesRight)
+# pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
+pressureCorrection.constrain(0., mesh.facesRight)
 
 start = time.clock()
 
