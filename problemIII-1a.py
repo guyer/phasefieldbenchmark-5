@@ -14,7 +14,7 @@ from fipy.tools import parallelComm
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", help="directory to store results in",
-                    default=str(uuid.uuid4()))
+                    default=os.path.join("Data", str(uuid.uuid4())))
 parser.add_argument("--sweeps", help="number of nonlinear sweeps to take",
                     type=int, default=10)
 parser.add_argument("--check", help="period of sweeps to checkpoint data",
