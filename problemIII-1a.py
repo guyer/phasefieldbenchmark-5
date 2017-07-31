@@ -83,8 +83,7 @@ yVelocityEq = fp.DiffusionTerm(coeff=viscosity) - pressure.grad.dot([0.,1.]) - d
 
 ap = fp.CellVariable(mesh=mesh, value=1.)
 coeff = 1./ ap.arithmeticFaceValue*mesh._faceAreas * mesh._cellDistances
-cellsAtOutlet = ((mesh.facesRight * mesh.faceNormals).divergence != 0)
-pressureCorrectionEq = fp.DiffusionTerm(coeff=coeff) - velocity.divergence * (~cellsAtOutlet.value)
+pressureCorrectionEq = fp.DiffusionTerm(coeff=coeff) - velocity.divergence
 
 contrvolume = volumes.arithmeticFaceValue
 
