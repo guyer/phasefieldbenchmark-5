@@ -36,8 +36,12 @@ else:
         
     data = dummyTreant()
     
+data.categories['problem'] = "III-1a"
 data.categories['args'] = " ".join(sys.argv)
 data.categories['sweeps'] = args.sweeps
+data.categories['dx'] = args.dx
+data.categories['dy'] = args.dy
+data.categories['compression'] = args.compression
 data.categories['commit'] = os.popen('git log --pretty="%H" -1').read().strip()
 data.categories['diff'] = os.popen('git diff').read()
     
@@ -96,10 +100,10 @@ def inlet(yy):
 xVelocity.constrain(inlet(Y), mesh.facesLeft)
 xVelocity.constrain(0., mesh.facesTop | mesh.facesBottom)
 
-yVelocity.constrain(0., mesh.exteriorFaces)
+yVelocity.constrain(0., mesh.facesTop | mesh.facesBottom | mesh.facesLeft)
 
-# pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
-pressureCorrection.constrain(0., mesh.facesRight)
+pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
+# pressureCorrection.constrain(0., mesh.facesRight)
 
 with open(data['residuals.npy'].make().abspath, 'a') as f:
     f.write("{}\t{}\t{}\t{}\t{}\n".format("sweep", "x_residual", "y_residual", "p_residual", "continuity"))
@@ -135,7 +139,7 @@ for sweep in range(args.sweeps):
     velocity[..., mesh.exteriorFaces.value] = 0.
     velocity[0, mesh.facesLeft.value] = inlet(Y)[mesh.facesLeft.value]
     velocity[0, mesh.facesRight.value] = xVelocity.faceValue[mesh.facesRight.value]
-#    velocity[1, mesh.facesRight.value] = yVelocity.faceValue[mesh.facesRight.value]
+    velocity[1, mesh.facesRight.value] = yVelocity.faceValue[mesh.facesRight.value]
 
     ## solve the pressure correction equation
     pressureCorrectionEq.cacheRHSvector()
@@ -155,7 +159,7 @@ for sweep in range(args.sweeps):
         fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
                             filename=data["sweep={}.tar.gz".format(sweep)].make().abspath)
                    
-    with open(data['residuals.npy'].make().abspath, 'a') as f:
+    with open(data['residuals.txt'].make().abspath, 'a') as f:
         f.write("{}\t{}\t{}\t{}\t{}\n".format(sweep, xres, yres, pres, max(abs(rhs))))
                             
 data.categories['elapsed'] = time.clock() - start
