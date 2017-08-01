@@ -46,7 +46,7 @@ pressureRelaxation = 0.8
 velocityRelaxation = 0.5
 
 mesh = fp.Gmsh2D('''
-cellSize = 1.0;
+cellSize = {cellSize};
                  
 Point(1) = {0, 0, 0, cellSize};
 Point(2) = {30, 0, 0, cellSize};
@@ -78,7 +78,7 @@ Physical Line("right") = {2};
 Physical Line("top") = {3};
 Physical Line("left") = {4};
 Physical Line("hole") = {5, 6, 7, 8};
-''')
+'''.format(cellSize=args.cellSize))
 
 volumes = fp.CellVariable(mesh=mesh, value=mesh.cellVolumes)
 
