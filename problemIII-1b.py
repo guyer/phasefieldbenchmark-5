@@ -120,9 +120,12 @@ pressureCorrection.constrain(0., mesh.physicalFaces["right"] & (Y > max(Y) - arg
 with open(data['residuals.npy'].make().abspath, 'a') as f:
     f.write("{}\t{}\t{}\t{}\t{}\n".format("sweep", "x_residual", "y_residual", "p_residual", "continuity"))
 
+fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
+                    filename=data["sweep={}.tar.gz".format(0)].make().abspath)
+
 start = time.clock()
 
-for sweep in range(args.sweeps):
+for sweep in range(1, args.sweeps+1):
     ## solve the Stokes equations to get starred values
     xVelocityEq.cacheMatrix()
     xres = xVelocityEq.sweep(var=xVelocity,
