@@ -114,8 +114,8 @@ yVelocity.constrain(0., (mesh.physicalFaces["top"]
                          | mesh.physicalFaces["left"]
                          | mesh.physicalFaces["hole"]))
 
-# pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
-pressureCorrection.constrain(0., mesh.physicalFaces["right"])
+pressureCorrection.constrain(0., mesh.physicalFaces["right"] & (Y > max(Y) - args.cellSize))
+# pressureCorrection.constrain(0., mesh.physicalFaces["right"])
 
 with open(data['residuals.npy'].make().abspath, 'a') as f:
     f.write("{}\t{}\t{}\t{}\t{}\n".format("sweep", "x_residual", "y_residual", "p_residual", "continuity"))
