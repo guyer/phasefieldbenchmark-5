@@ -108,8 +108,11 @@ xVelocity.constrain(inlet(Y), mesh.physicalFaces["left"])
 xVelocity.constrain(0., (mesh.physicalFaces["top"] 
                          | mesh.physicalFaces["bottom"] 
                          | mesh.physicalFaces["hole"]))
-
-yVelocity.constrain(0., mesh.exteriorFaces)
+                         
+yVelocity.constrain(0., (mesh.physicalFaces["top"] 
+                         | mesh.physicalFaces["bottom"]
+                         | mesh.physicalFaces["left"]
+                         | mesh.physicalFaces["hole"]))
 
 # pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
 pressureCorrection.constrain(0., mesh.physicalFaces["right"])
@@ -148,7 +151,7 @@ for sweep in range(args.sweeps):
     velocity[..., mesh.exteriorFaces.value] = 0.
     velocity[0, mesh.physicalFaces["left"].value] = inlet(Y)[mesh.physicalFaces["left"].value]
     velocity[0, mesh.physicalFaces["right"].value] = xVelocity.faceValue[mesh.physicalFaces["right"].value]
-#    velocity[1, mesh.facesRight.value] = yVelocity.faceValue[mesh.facesRight.value]
+    velocity[1, mesh.physicalFaces["right"].value] = yVelocity.faceValue[mesh.physicalFaces["right"].value]
 
     ## solve the pressure correction equation
     pressureCorrectionEq.cacheRHSvector()
