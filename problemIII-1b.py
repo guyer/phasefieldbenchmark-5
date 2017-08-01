@@ -171,7 +171,7 @@ for sweep in range(args.sweeps):
         fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
                             filename=data["sweep={}.tar.gz".format(sweep)].make().abspath)
                    
-    with open(data['residuals.npy'].make().abspath, 'a') as f:
+    with open(data['residuals.txt'].make().abspath, 'a') as f:
         f.write("{}\t{}\t{}\t{}\t{}\n".format(sweep, xres, yres, pres, max(abs(rhs))))
                             
 data.categories['elapsed'] = time.clock() - start
