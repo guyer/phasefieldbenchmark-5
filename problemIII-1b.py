@@ -155,7 +155,7 @@ for sweep in range(args.sweeps):
 
     ## solve the pressure correction equation
     pressureCorrectionEq.cacheRHSvector()
-    ## left bottom point must remain at pressure 0, so no correction
+    ## right top point must remain at pressure 0, so no correction
     pres = pressureCorrectionEq.sweep(var=pressureCorrection)
     rhs = pressureCorrectionEq.RHSvector
 
