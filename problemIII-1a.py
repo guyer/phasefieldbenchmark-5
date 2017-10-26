@@ -1,8 +1,15 @@
+"""
+
+    sweeps - number of nonlinear sweeps to take
+    check - period of sweeps to checkpoint data
+    dx - cell spacing in x direction
+    dy - cell spacing in y direction
+    compression - number of compressed cells within outlet 'cell'
+
+"""
 import os
 import sys
-import argparse
-import time
-import uuid 
+import json
 
 from scipy.optimize import fsolve
 
@@ -12,38 +19,28 @@ import fipy as fp
 from fipy.tools.numerix import cos, sin
 from fipy.tools import parallelComm
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--output", help="directory to store results in",
-                    default=os.path.join("Data", str(uuid.uuid4())))
-parser.add_argument("--sweeps", help="number of nonlinear sweeps to take",
-                    type=int, default=10)
-parser.add_argument("--check", help="period of sweeps to checkpoint data",
-                    type=int, default=1)
-parser.add_argument("--dx", help="cell spacing in x direction",
-                    type=float, default=0.2)
-parser.add_argument("--dy", help="cell spacing in y direction",
-                    type=float, default=0.2)
-parser.add_argument("--compression", help="number of compressed cells within outlet 'cell'",
-                    type=int, default=1)
-args, unknowns = parser.parse_known_args()
-                    
+jsonfile = sys.argv[1]
+
+with open(jsonfile, 'r') as f:
+    params = json.load(f)
+
+try:
+    from sumatra.projects import load_project
+    project = load_project(os.getcwd())
+    output = os.path.join(project.data_store.root, params["sumatra_label"])
+except:
+    # either there's no sumatra, no sumatra project, or no sumatra_label
+    # this will be the case if this script is run directly
+    output = os.getcwd()
+
 if parallelComm.procID == 0:
-    print "storing results in {0}".format(args.output)
-    data = dtr.Treant(args.output)
+    print "storing results in {0}".format(output)
+    data = dtr.Treant(output)
 else:
     class dummyTreant(object):
         categories = dict()
         
     data = dummyTreant()
-    
-data.categories['problem'] = "III-1a"
-data.categories['args'] = " ".join(sys.argv)
-data.categories['sweeps'] = args.sweeps
-data.categories['dx'] = args.dx
-data.categories['dy'] = args.dy
-data.categories['compression'] = args.compression
-data.categories['commit'] = os.popen('git log --pretty="%H" -1').read().strip()
-data.categories['diff'] = os.popen('git diff').read()
     
 viscosity = 1
 density = 100.
@@ -53,8 +50,8 @@ velocityRelaxation = 0.5
 
 Lx = 30.
 Ly = 6.
-dx = args.dx
-dy = args.dy
+dx = params["dx"]
+dy = params["dy"]
 
 def fn(f, N):
     '''Root solving kernel for compression factor
@@ -63,7 +60,7 @@ def fn(f, N):
     '''
     return (1 - f**N) / (1 - f) - 2.
     
-N = 1 + args.compression
+N = 1 + params["compression"]
 compression = fsolve(fn, x0=[.5], args=(N))[0]
 
 Nx = int(Lx / dx)
@@ -105,15 +102,13 @@ yVelocity.constrain(0., mesh.facesTop | mesh.facesBottom | mesh.facesLeft)
 pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
 # pressureCorrection.constrain(0., mesh.facesRight)
 
-with open(data['residuals.npy'].make().abspath, 'a') as f:
+with open(data['residuals.txt'].make().abspath, 'a') as f:
     f.write("{}\t{}\t{}\t{}\t{}\n".format("sweep", "x_residual", "y_residual", "p_residual", "continuity"))
 
 fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
                     filename=data["sweep={}.tar.gz".format(0)].make().abspath)
 
-start = time.clock()
-
-for sweep in range(1, args.sweeps+1):
+for sweep in range(1, params["sweeps"]+1):
     ## solve the Stokes equations to get starred values
     xVelocityEq.cacheMatrix()
     xres = xVelocityEq.sweep(var=xVelocity,
@@ -158,11 +153,9 @@ for sweep in range(1, args.sweeps+1):
     yVelocity.setValue(yVelocity - pressureCorrection.grad[1] / \
                                                ap * mesh.cellVolumes)
 
-    if sweep % args.check == 0:
+    if sweep % params["check"] == 0:
         fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
                             filename=data["sweep={}.tar.gz".format(sweep)].make().abspath)
                    
     with open(data['residuals.txt'].make().abspath, 'a') as f:
         f.write("{}\t{}\t{}\t{}\t{}\n".format(sweep, xres, yres, pres, max(abs(rhs))))
-                            
-data.categories['elapsed'] = time.clock() - start
