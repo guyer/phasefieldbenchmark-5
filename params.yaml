@@ -1,0 +1,5 @@
+sweeps: 10      # number of nonlinear sweeps to take
+check: 1        # period of sweeps to checkpoint data
+dx: 0.2         # cell spacing in x direction
+dy: 0.2         # cell spacing in y direction
+compression: 1  # number of compressed cells within outlet 'cell'

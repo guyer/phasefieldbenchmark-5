@@ -9,7 +9,7 @@
 """
 import os
 import sys
-import json
+import yaml
 
 from scipy.optimize import fsolve
 
@@ -19,15 +19,16 @@ import fipy as fp
 from fipy.tools.numerix import cos, sin
 from fipy.tools import parallelComm
 
-jsonfile = sys.argv[1]
+yamlfile = sys.argv[1]
 
-with open(jsonfile, 'r') as f:
-    params = json.load(f)
+with open(yamlfile, 'r') as f:
+    params = yaml.load(f)
 
 try:
     from sumatra.projects import load_project
     project = load_project(os.getcwd())
-    output = os.path.join(project.data_store.root, params["sumatra_label"])
+    record = project.get_record(params["sumatra_label"])
+    output = record.datastore.root
 except:
     # either there's no sumatra, no sumatra project, or no sumatra_label
     # this will be the case if this script is run directly
