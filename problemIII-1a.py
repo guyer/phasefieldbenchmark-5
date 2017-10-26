@@ -1,12 +1,3 @@
-"""
-
-    sweeps - number of nonlinear sweeps to take
-    check - period of sweeps to checkpoint data
-    dx - cell spacing in x direction
-    dy - cell spacing in y direction
-    compression - number of compressed cells within outlet 'cell'
-
-"""
 import os
 import sys
 import yaml
