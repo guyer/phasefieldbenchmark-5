@@ -83,16 +83,20 @@ contrvolume = volumes.arithmeticFaceValue
 x, y = mesh.cellCenters
 X, Y = mesh.faceCenters
 
-def inlet(yy):
+inlet = mesh.facesLeft
+outlet = mesh.facesRight
+walls = mesh.facesTop | mesh.facesBottom
+
+def inlet_velocity(yy):
     return -0.001 * (yy - 3)**2 + 0.009
     
-xVelocity.constrain(inlet(Y), mesh.facesLeft)
-xVelocity.constrain(0., mesh.facesTop | mesh.facesBottom)
+xVelocity.constrain(inlet_velocity(Y), inlet)
+xVelocity.constrain(0., walls)
 
-yVelocity.constrain(0., mesh.facesTop | mesh.facesBottom | mesh.facesLeft)
+yVelocity.constrain(0., walls | inlet)
 
-pressureCorrection.constrain(0., mesh.facesRight & (Y > Ly - dy))
-# pressureCorrection.constrain(0., mesh.facesRight)
+pressureCorrection.constrain(0., outlet & (Y > Ly - dy))
+# pressureCorrection.constrain(0., outlet)
 
 with open(data['residuals.txt'].make().abspath, 'a') as f:
     f.write("{}\t{}\t{}\t{}\t{}\n".format("sweep", "x_residual", "y_residual", "p_residual", "continuity"))
@@ -127,9 +131,9 @@ for sweep in range(1, params["sweeps"]+1):
          + contrvolume / ap.arithmeticFaceValue * \
            (presgrad[1].arithmeticFaceValue-facepresgrad[1])
     velocity[..., mesh.exteriorFaces.value] = 0.
-    velocity[0, mesh.facesLeft.value] = inlet(Y)[mesh.facesLeft.value]
-    velocity[0, mesh.facesRight.value] = xVelocity.faceValue[mesh.facesRight.value]
-    velocity[1, mesh.facesRight.value] = yVelocity.faceValue[mesh.facesRight.value]
+    velocity[0, inlet.value] = inlet_velocity(Y)[inlet.value]
+    velocity[0, outlet.value] = xVelocity.faceValue[outlet.value]
+    velocity[1, outlet.value] = yVelocity.faceValue[outlet.value]
 
     ## solve the pressure correction equation
     pressureCorrectionEq.cacheRHSvector()
