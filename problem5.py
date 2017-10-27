@@ -2,8 +2,6 @@ import os
 import sys
 import yaml
 
-from scipy.optimize import fsolve
-
 import datreant.core as dtr
 
 import fipy as fp
@@ -40,48 +38,27 @@ gravity = [0., -0.001]
 pressureRelaxation = 0.8
 velocityRelaxation = 0.5
 
-mesh = fp.Gmsh2D('''
-cellSize = %(cellSize)g;
-                 
-Point(1) = {0, 0, 0, cellSize};
-Point(2) = {30, 0, 0, cellSize};
-Point(3) = {30, 6, 0, cellSize};
-Point(4) = {0, 6, 0, cellSize};
-Point(5) = {7, 2.5, 0, cellSize};
-Point(6) = {7, 4, 0, cellSize};
-Point(7) = {6, 2.5, 0, cellSize};
-Point(8) = {7, 1, 0, cellSize};
-Point(9) = {8, 2.5, 0, cellSize};
-                 
-Line(1) = {1, 2};
-Line(2) = {2, 3};
-Line(3) = {3, 4};
-Line(4) = {4, 1};
-Ellipse(5) = {7, 5, 6, 6};
-Ellipse(6) = {6, 5, 9, 9};
-Ellipse(7) = {9, 5, 8, 8};
-Ellipse(8) = {8, 5, 7, 7};
+if params["problem"] == "5a":
+    from mesh5a import mesh_and_boundaries
 
-Line Loop(9) = {1, 2, 3, 4};
-Line Loop(10) = {5, 6, 7, 8};
-Plane Surface(11) = {9, 10};
+    (mesh, 
+     inlet, 
+     outlet, 
+     walls, 
+     top_right) = mesh_and_boundaries(Lx=30., Ly=6., 
+                                      dx=params["dx"], dy=params["dy"], 
+                                      compression=params["compression"])
+elif params["problem"] == "5b":
+    from mesh5b import mesh_and_boundaries
 
-Physical Surface("cells") = {11};
-                 
-Physical Line("bottom") = {1};
-Physical Line("right") = {2};
-Physical Line("top") = {3};
-Physical Line("left") = {4};
-Physical Line("hole") = {5, 6, 7, 8};
-''' % dict(cellSize=params["cellSize"]))
-
-x, y = mesh.cellCenters
-X, Y = mesh.faceCenters
-
-inlet = mesh.physicalFaces["left"]
-outlet = mesh.physicalFaces["right"]
-walls = mesh.physicalFaces["top"] | mesh.physicalFaces["bottom"] | mesh.physicalFaces["hole"]
-top_right = outlet & (Y > max(Y) - params["cellSize"])
+    (mesh, 
+     inlet, 
+     outlet, 
+     walls, 
+     top_right) = mesh_and_boundaries(Lx=30., Ly=6., 
+                                      cellSize=params["cellSize"])
+else:
+    raise Exception("Unknown problem: {problem}".format(problem=params["problem"]))     
 
 volumes = fp.CellVariable(mesh=mesh, value=mesh.cellVolumes)
 
@@ -104,6 +81,8 @@ contrvolume = volumes.arithmeticFaceValue
 def inlet_velocity(yy):
     return -0.001 * (yy - 3)**2 + 0.009
 
+X, Y = mesh.faceCenters
+
 xVelocity.constrain(inlet_velocity(Y), inlet)
 xVelocity.constrain(0., walls)
 
@@ -113,7 +92,7 @@ pressureCorrection.constrain(0., top_right)
 # pressureCorrection.constrain(0., outlet)
 
 with open(data['residuals.txt'].make().abspath, 'a') as f:
-    f.write("{}\t{}\t{}\t{}\t{}\n".format("sweep", "x_residual", "y_residual", "p_residual", "continuity"))
+    f.write("\t".join(["sweep", "x_residual", "y_residual", "p_residual", "continuity"]) + "\n")
 
 fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
                     filename=data["sweep={}.tar.gz".format(0)].make().abspath)

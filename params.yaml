@@ -1,3 +1,4 @@
+problem: unknown # which subproblem, e.g., 5a to run, determines mesh to use
 sweeps: 10      # number of nonlinear sweeps to take
 check: 1        # period of sweeps to checkpoint data
 dx: 0.2         # cell spacing in x direction
