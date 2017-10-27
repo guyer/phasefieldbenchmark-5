@@ -62,6 +62,12 @@ dx_variable = [dx] * (Nx - 2) + [dx * compression**i for i in range(N+1)]
 dy_variable = [dy] * Ny
 
 mesh = fp.Grid2D(dx=dx_variable, dy=dy_variable)
+
+inlet = mesh.facesLeft
+outlet = mesh.facesRight
+walls = mesh.facesTop | mesh.facesBottom
+top_right = outlet & (Y > Ly - dy)
+
 volumes = fp.CellVariable(mesh=mesh, value=mesh.cellVolumes)
 
 pressure = fp.CellVariable(mesh=mesh, name="$p$")
@@ -83,19 +89,15 @@ contrvolume = volumes.arithmeticFaceValue
 x, y = mesh.cellCenters
 X, Y = mesh.faceCenters
 
-inlet = mesh.facesLeft
-outlet = mesh.facesRight
-walls = mesh.facesTop | mesh.facesBottom
-
 def inlet_velocity(yy):
     return -0.001 * (yy - 3)**2 + 0.009
-    
+
 xVelocity.constrain(inlet_velocity(Y), inlet)
 xVelocity.constrain(0., walls)
 
 yVelocity.constrain(0., walls | inlet)
 
-pressureCorrection.constrain(0., outlet & (Y > Ly - dy))
+pressureCorrection.constrain(0., top_right)
 # pressureCorrection.constrain(0., outlet)
 
 with open(data['residuals.txt'].make().abspath, 'a') as f:

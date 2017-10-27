@@ -1,8 +1,6 @@
 import os
 import sys
-import argparse
-import time
-import uuid 
+import yaml
 
 from scipy.optimize import fsolve
 
@@ -12,32 +10,29 @@ import fipy as fp
 from fipy.tools.numerix import cos, sin
 from fipy.tools import parallelComm
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--output", help="directory to store results in",
-                    default=os.path.join("Data", str(uuid.uuid4())))
-parser.add_argument("--sweeps", help="number of nonlinear sweeps to take",
-                    type=int, default=10)
-parser.add_argument("--check", help="period of sweeps to checkpoint data",
-                    type=int, default=1)
-parser.add_argument("--cellSize", help="typlical cell dimension",
-                    type=float, default=1.0)
-args, unknowns = parser.parse_known_args()
-                    
+yamlfile = sys.argv[1]
+
+with open(yamlfile, 'r') as f:
+    params = yaml.load(f)
+
+try:
+    from sumatra.projects import load_project
+    project = load_project(os.getcwd())
+    record = project.get_record(params["sumatra_label"])
+    output = record.datastore.root
+except:
+    # either there's no sumatra, no sumatra project, or no sumatra_label
+    # this will be the case if this script is run directly
+    output = os.getcwd()
+
 if parallelComm.procID == 0:
-    print "storing results in {0}".format(args.output)
-    data = dtr.Treant(args.output)
+    print "storing results in {0}".format(output)
+    data = dtr.Treant(output)
 else:
     class dummyTreant(object):
         categories = dict()
         
     data = dummyTreant()
-    
-data.categories['problem'] = "III-1b"
-data.categories['args'] = " ".join(sys.argv)
-data.categories['sweeps'] = args.sweeps
-data.categories['cellSize'] = args.cellSize
-data.categories['commit'] = os.popen('git log --pretty="%H" -1').read().strip()
-data.categories['diff'] = os.popen('git diff').read()
     
 viscosity = 1
 density = 100.
@@ -78,7 +73,12 @@ Physical Line("right") = {2};
 Physical Line("top") = {3};
 Physical Line("left") = {4};
 Physical Line("hole") = {5, 6, 7, 8};
-''' % dict(cellSize=args.cellSize))
+''' % dict(cellSize=params["cellSize"]))
+
+inlet = mesh.physicalFaces["left"]
+outlet = mesh.physicalFaces["right"]
+walls = mesh.physicalFaces["top"] | mesh.physicalFaces["bottom"] | mesh.physicalFaces["hole"]
+top_right = outlet & (Y > max(Y) - args.cellSize)
 
 volumes = fp.CellVariable(mesh=mesh, value=mesh.cellVolumes)
 
@@ -101,31 +101,24 @@ contrvolume = volumes.arithmeticFaceValue
 x, y = mesh.cellCenters
 X, Y = mesh.faceCenters
 
-def inlet(yy):
+def inlet_velocity(yy):
     return -0.001 * (yy - 3)**2 + 0.009
-    
-xVelocity.constrain(inlet(Y), mesh.physicalFaces["left"])
-xVelocity.constrain(0., (mesh.physicalFaces["top"] 
-                         | mesh.physicalFaces["bottom"] 
-                         | mesh.physicalFaces["hole"]))
-                         
-yVelocity.constrain(0., (mesh.physicalFaces["top"] 
-                         | mesh.physicalFaces["bottom"]
-                         | mesh.physicalFaces["left"]
-                         | mesh.physicalFaces["hole"]))
 
-pressureCorrection.constrain(0., mesh.physicalFaces["right"] & (Y > max(Y) - args.cellSize))
-# pressureCorrection.constrain(0., mesh.physicalFaces["right"])
+xVelocity.constrain(inlet_velocity(Y), inlet)
+xVelocity.constrain(0., walls)
 
-with open(data['residuals.npy'].make().abspath, 'a') as f:
+yVelocity.constrain(0., walls | inlet)
+
+pressureCorrection.constrain(0., top_right)
+# pressureCorrection.constrain(0., outlet)
+
+with open(data['residuals.txt'].make().abspath, 'a') as f:
     f.write("{}\t{}\t{}\t{}\t{}\n".format("sweep", "x_residual", "y_residual", "p_residual", "continuity"))
 
 fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
                     filename=data["sweep={}.tar.gz".format(0)].make().abspath)
 
-start = time.clock()
-
-for sweep in range(1, args.sweeps+1):
+for sweep in range(1, params["sweeps"]+1):
     ## solve the Stokes equations to get starred values
     xVelocityEq.cacheMatrix()
     xres = xVelocityEq.sweep(var=xVelocity,
@@ -152,9 +145,9 @@ for sweep in range(1, args.sweeps+1):
          + contrvolume / ap.arithmeticFaceValue * \
            (presgrad[1].arithmeticFaceValue-facepresgrad[1])
     velocity[..., mesh.exteriorFaces.value] = 0.
-    velocity[0, mesh.physicalFaces["left"].value] = inlet(Y)[mesh.physicalFaces["left"].value]
-    velocity[0, mesh.physicalFaces["right"].value] = xVelocity.faceValue[mesh.physicalFaces["right"].value]
-    velocity[1, mesh.physicalFaces["right"].value] = yVelocity.faceValue[mesh.physicalFaces["right"].value]
+    velocity[0, inlet.value] = inlet_velocity(Y)[inlet.value]
+    velocity[0, outlet.value] = xVelocity.faceValue[outlet.value]
+    velocity[1, outlet.value] = yVelocity.faceValue[outlet.value]
 
     ## solve the pressure correction equation
     pressureCorrectionEq.cacheRHSvector()
@@ -170,11 +163,9 @@ for sweep in range(1, args.sweeps+1):
     yVelocity.setValue(yVelocity - pressureCorrection.grad[1] / \
                                                ap * mesh.cellVolumes)
 
-    if sweep % args.check == 0:
+    if sweep % params["check"] == 0:
         fp.tools.dump.write((xVelocity, yVelocity, velocity, pressure), 
                             filename=data["sweep={}.tar.gz".format(sweep)].make().abspath)
                    
     with open(data['residuals.txt'].make().abspath, 'a') as f:
         f.write("{}\t{}\t{}\t{}\t{}\n".format(sweep, xres, yres, pres, max(abs(rhs))))
-                            
-data.categories['elapsed'] = time.clock() - start
