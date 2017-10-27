@@ -75,10 +75,13 @@ Physical Line("left") = {4};
 Physical Line("hole") = {5, 6, 7, 8};
 ''' % dict(cellSize=params["cellSize"]))
 
+x, y = mesh.cellCenters
+X, Y = mesh.faceCenters
+
 inlet = mesh.physicalFaces["left"]
 outlet = mesh.physicalFaces["right"]
 walls = mesh.physicalFaces["top"] | mesh.physicalFaces["bottom"] | mesh.physicalFaces["hole"]
-top_right = outlet & (Y > max(Y) - args.cellSize)
+top_right = outlet & (Y > max(Y) - params["cellSize"])
 
 volumes = fp.CellVariable(mesh=mesh, value=mesh.cellVolumes)
 
@@ -97,9 +100,6 @@ coeff = 1./ ap.arithmeticFaceValue*mesh._faceAreas * mesh._cellDistances
 pressureCorrectionEq = fp.DiffusionTerm(coeff=coeff) - velocity.divergence
 
 contrvolume = volumes.arithmeticFaceValue
-
-x, y = mesh.cellCenters
-X, Y = mesh.faceCenters
 
 def inlet_velocity(yy):
     return -0.001 * (yy - 3)**2 + 0.009

@@ -63,6 +63,9 @@ dy_variable = [dy] * Ny
 
 mesh = fp.Grid2D(dx=dx_variable, dy=dy_variable)
 
+x, y = mesh.cellCenters
+X, Y = mesh.faceCenters
+
 inlet = mesh.facesLeft
 outlet = mesh.facesRight
 walls = mesh.facesTop | mesh.facesBottom
@@ -85,9 +88,6 @@ coeff = 1./ ap.arithmeticFaceValue*mesh._faceAreas * mesh._cellDistances
 pressureCorrectionEq = fp.DiffusionTerm(coeff=coeff) - velocity.divergence
 
 contrvolume = volumes.arithmeticFaceValue
-
-x, y = mesh.cellCenters
-X, Y = mesh.faceCenters
 
 def inlet_velocity(yy):
     return -0.001 * (yy - 3)**2 + 0.009
