@@ -28,6 +28,6 @@ def mesh_and_boundaries(Lx, Ly, dx, dy, compression):
     inlet = mesh.facesLeft
     outlet = mesh.facesRight
     walls = mesh.facesTop | mesh.facesBottom
-    top_right = outlet & (Y < dy)
+    top_right = outlet & (Y > Ly - dy)
 
     return mesh, inlet, outlet, walls, top_right
