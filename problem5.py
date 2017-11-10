@@ -85,14 +85,14 @@ X, Y = mesh.faceCenters
 
 xVelocity.constrain(inlet_velocity(Y), inlet)
 xVelocity.constrain(0., walls)
-xVelocity.faceGrad.constrain([0.], outlet)
+# xVelocity.faceGrad.constrain([0.], outlet)
 
 yVelocity.constrain(0., walls | inlet | outlet)
 
 pressure.constrain(0., top_right)
-pressure.faceGrad.constrain([density * gravity[0]], outlet)
+# pressure.faceGrad.constrain([density * gravity[0]], outlet)
 pressureCorrection.constrain(0., top_right)
-pressureCorrection.faceGrad.constrain([0.], outlet)
+# pressureCorrection.faceGrad.constrain([0.], outlet)
 
 # pressureCorrection.constrain(0., outlet)
 
