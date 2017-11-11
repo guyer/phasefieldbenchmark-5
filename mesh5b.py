@@ -2,7 +2,7 @@ from textwrap import dedent
 
 import fipy as fp
 
-def mesh_and_boundaries(Lx, Ly, cellSize):
+def mesh_and_boundaries(params):
     """Generate a Gmsh mesh appropriate for the parameters
 
     """
