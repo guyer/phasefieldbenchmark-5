@@ -18,8 +18,8 @@ def mesh_and_boundaries(params):
     dx = dy = params["cellSize"]
     Nx = int(params["Lx"] / dx)
     Ny = int(params["Ly"] / dx)
-    dx_variable = [dx] * (Nx - 2) + [dx * params["compression"]**i for i in range(N+1)]
-
+    dx_variable = [dx] * (Nx - N) + [dx * params["compression"]**i for i in range(N)]
+    
     dy_variable = [dy] * Ny
 
     mesh = fp.Grid2D(dx=dx_variable, dy=dy_variable)
