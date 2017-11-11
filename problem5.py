@@ -1,3 +1,4 @@
+from importlib import import_module
 import os
 import sys
 import yaml
@@ -38,27 +39,13 @@ gravity = [0., -0.001]
 pressureRelaxation = 0.8
 velocityRelaxation = 0.5
 
-if params["problem"] == "5a":
-    from mesh5a import mesh_and_boundaries
+meshmodule = import_module("mesh{}".format(params["problem"]))
 
-    (mesh, 
-     inlet, 
-     outlet, 
-     walls, 
-     top_right) = mesh_and_boundaries(Lx=30., Ly=6., 
-                                      dx=params["dx"], dy=params["dy"], 
-                                      compression=params["compression"])
-elif params["problem"] == "5b":
-    from mesh5b import mesh_and_boundaries
-
-    (mesh, 
-     inlet, 
-     outlet, 
-     walls, 
-     top_right) = mesh_and_boundaries(Lx=30., Ly=6., 
-                                      cellSize=params["cellSize"])
-else:
-    raise Exception("Unknown problem: {problem}".format(problem=params["problem"]))     
+(mesh,
+ inlet,
+ outlet,
+ walls,
+ top_right) = meshmodule.mesh_and_boundaries(params)
 
 volumes = fp.CellVariable(mesh=mesh, value=mesh.cellVolumes)
 

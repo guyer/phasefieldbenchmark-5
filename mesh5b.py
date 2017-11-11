@@ -41,13 +41,13 @@ def mesh_and_boundaries(Lx, Ly, cellSize):
         Physical Line("top") = {3};
         Physical Line("left") = {4};
         Physical Line("hole") = {5, 6, 7, 8};
-    ''' % locals()))
+    ''' % params))
 
     X, Y = mesh.faceCenters
 
     inlet = mesh.physicalFaces["left"]
     outlet = mesh.physicalFaces["right"]
     walls = mesh.physicalFaces["top"] | mesh.physicalFaces["bottom"] | mesh.physicalFaces["hole"]
-    top_right = outlet & (Y > max(Y) - cellSize)
+    top_right = outlet & (Y > max(Y) - params["cellSize"])
 
     return mesh, inlet, outlet, walls, top_right

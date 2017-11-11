@@ -1,6 +1,7 @@
 problem: unknown # which subproblem, e.g., 5a to run, determines mesh to use
 sweeps: 10      # number of nonlinear sweeps to take
 check: 1        # period of sweeps to checkpoint data
-dx: 0.2         # cell spacing in x direction
-dy: 0.2         # cell spacing in y direction
+Lx: 30.         # length of mesh
+Ly: 6.          # height of mesh
+cellSize: 0.2   # cell spacing
 compression: 1  # number of compressed cells within outlet 'cell'
