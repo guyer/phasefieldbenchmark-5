@@ -35,7 +35,7 @@ else:
     
 viscosity = 1
 density = 100.
-gravity = [0., -0.001]
+gravity = [params["gx"], params["gy"]]
 pressureRelaxation = 0.8
 velocityRelaxation = 0.5
 

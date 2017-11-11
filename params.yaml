@@ -4,4 +4,6 @@ check: 1        # period of sweeps to checkpoint data
 Lx: 30.         # length of mesh
 Ly: 6.          # height of mesh
 cellSize: 0.2   # cell spacing
+gx: 0.          # gravitation in x-direction
+gy: -0.001      # gravitation in y-direction
 compression: 1  # number of compressed cells within outlet 'cell'
