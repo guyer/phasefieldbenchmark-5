@@ -61,7 +61,13 @@ yVelocityEq = fp.DiffusionTerm(coeff=viscosity) - pressure.grad.dot([[0.],[1.]])
 
 ap = fp.CellVariable(mesh=mesh, value=1.)
 coeff = 1./ ap.arithmeticFaceValue*mesh._faceAreas * mesh._cellDistances
-pressureCorrectionEq = fp.DiffusionTerm(coeff=coeff) - velocity.divergence
+
+x, y = mesh.cellCenters
+top_right_cell = (x > max(x) - params["cellSize"]) & (y > max(y) - params["cellSize"])
+large_value = 1e10
+pressureCorrectionEq = (fp.DiffusionTerm(coeff=coeff) - velocity.divergence 
+                        + fp.ImplicitSourceTerm(coeff=top_right_cell * large_value) 
+                        - top_right_cell * large_value * pressureCorrection)
 
 contrvolume = volumes.arithmeticFaceValue
 
@@ -76,14 +82,8 @@ xVelocity.faceGrad.constrain([[0.], [0.]], outlet)
 
 yVelocity.constrain(0., walls | inlet)
 
-pressure.constrain(0., top_right)
-pressure.faceGrad.constrain([[density * gravity[0]], [0.]], outlet & ~top_right)
-# pressure.grad.constrain([[density * gravity[0]], [0.]], outlet)
-pressureCorrection.constrain(0., top_right)
-pressureCorrection.faceGrad.constrain([[0.], [0.]], outlet & ~top_right)
-# pressureCorrection.grad.constrain([[0.], [0.]], outlet)
-
-# pressureCorrection.constrain(0., outlet)
+pressure.faceGrad.constrain([[density * gravity[0]], [0.]], outlet)
+pressureCorrection.faceGrad.constrain([[0.], [0.]], outlet)
 
 with open(data['residuals.txt'].make().abspath, 'a') as f:
     f.write("\t".join(["sweep", "x_residual", "y_residual", "p_residual", "continuity"]) + "\n")
