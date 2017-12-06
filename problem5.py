@@ -63,11 +63,12 @@ ap = fp.CellVariable(mesh=mesh, value=1.)
 coeff = 1./ ap.arithmeticFaceValue*mesh._faceAreas * mesh._cellDistances
 
 x, y = mesh.cellCenters
-top_right_cell = (x > max(x) - params["cellSize"]) & (y > max(y) - params["cellSize"])
+top_right_cell = fp.CellVariable(mesh=mesh, value=(x > max(x) - params["cellSize"]) & (y > max(y) - params["cellSize"]))
+
 large_value = 1e10
 pressureCorrectionEq = (fp.DiffusionTerm(coeff=coeff) - velocity.divergence 
-                        + fp.ImplicitSourceTerm(coeff=top_right_cell * large_value) 
-                        - top_right_cell * large_value * pressureCorrection)
+                        - fp.ImplicitSourceTerm(coeff=top_right_cell * large_value) 
+                        + top_right_cell * large_value * 0.)
 
 contrvolume = volumes.arithmeticFaceValue
 
