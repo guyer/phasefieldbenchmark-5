@@ -79,7 +79,6 @@ X, Y = mesh.faceCenters
 
 xVelocity.constrain(inlet_velocity(Y), inlet)
 xVelocity.constrain(0., walls)
-xVelocity.faceGrad.constrain([[0.], [0.]], outlet)
 
 yVelocity.constrain(0., walls | inlet)
 
